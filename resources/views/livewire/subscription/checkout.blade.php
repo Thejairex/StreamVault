@@ -1,113 +1,94 @@
-<div>
-    <x-auth-header
-        :title="__('Activate your subscription')"
-        :description="__('Complete your payment to access StreamVault')"
-    />
+<div class="min-h-screen flex items-center justify-center bg-[#131315]">
+    <div class="w-full max-w-md p-8" style="background: #201f21;">
 
-    <!-- Session Status -->
-    <x-auth-session-status class="text-center" :status="session('status')" />
-
-    @if ($alreadySubscribed)
-        <div class="flex flex-col items-center gap-4 py-6">
-            <div class="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/10">
-                <flux:icon.check-circle class="size-8 text-emerald-500" />
-            </div>
-            <p class="text-sm text-zinc-600 dark:text-zinc-400">
-                {{ __('You already have an active subscription.') }}
+        {{-- Header --}}
+        <div class="mb-8">
+            <h1 class="text-white font-bold text-2xl tracking-tight" style="font-family: 'Cabinet Grotesk', sans-serif; letter-spacing: -0.03em;">
+                StreamVault
+            </h1>
+            <p class="mt-1" style="color: #cdc2d8; font-size: 0.875rem;">
+                Suscripción Premium &mdash; ${{ number_format($price, 2) }}/mes
             </p>
-            <flux:button :href="route('dashboard')" variant="primary" wire:navigate>
-                {{ __('Go to Dashboard') }}
-            </flux:button>
         </div>
-    @else
-        {{-- Plan Card --}}
-        <div class="rounded-xl border border-indigo-500/30 bg-linear-to-b from-indigo-500/5 to-transparent p-5">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h3 class="text-base font-semibold text-zinc-900 dark:text-white">Premium</h3>
-                    <p class="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">{{ __('Full access to StreamVault') }}</p>
-                </div>
-                <div class="text-right">
-                    <span class="text-2xl font-bold text-zinc-900 dark:text-white">${{ number_format($price, 2) }}</span>
-                    <span class="text-xs text-zinc-500 dark:text-zinc-400">/{{ __('month') }}</span>
-                </div>
+
+        {{-- Error --}}
+        @if ($errorMessage)
+            <div class="mb-4 p-3 text-sm" style="background: #2a1a1a; color: #ff6b6b;">
+                {{ $errorMessage }}
             </div>
+        @endif
 
-            <ul class="mt-4 space-y-2 text-sm text-zinc-600 dark:text-zinc-400">
-                <li class="flex items-center gap-2">
-                    <flux:icon.check class="size-4 text-emerald-500" />
-                    {{ __('Follow up to :count streamers', ['count' => config('streamvault.max_follows', 5)]) }}
-                </li>
-                <li class="flex items-center gap-2">
-                    <flux:icon.check class="size-4 text-emerald-500" />
-                    {{ __('Revenue sharing with your favorites') }}
-                </li>
-                <li class="flex items-center gap-2">
-                    <flux:icon.check class="size-4 text-emerald-500" />
-                    {{ __('Exclusive dashboard & analytics') }}
-                </li>
-            </ul>
-        </div>
-
-        {{-- Payment Form --}}
-        <form wire:submit="subscribe" class="flex flex-col gap-4">
-            <flux:separator text="{{ __('Payment details') }}" />
-
-            <flux:input
-                wire:model="cardName"
-                :label="__('Name on card')"
-                type="text"
-                required
-                autocomplete="cc-name"
-                :placeholder="__('John Doe')"
-                data-test="card-name-input"
-            />
-
-            <flux:input
-                wire:model="cardNumber"
-                :label="__('Card number')"
-                type="text"
-                required
-                autocomplete="cc-number"
-                placeholder="1234 5678 9012 3456"
-                maxlength="19"
-                x-mask="9999 9999 9999 9999"
-                data-test="card-number-input"
-            />
-
-            <div class="grid grid-cols-2 gap-4">
-                <flux:input
-                    wire:model="cardExpiry"
-                    :label="__('Expiry')"
+        {{-- Formulario Stripe --}}
+        <form id="payment-form" wire:submit.prevent>
+            <div class="mb-4">
+                <label class="block mb-1 text-xs uppercase tracking-widest" style="color: #cdc2d8;">Nombre en la tarjeta</label>
+                <input
                     type="text"
-                    required
-                    autocomplete="cc-exp"
-                    placeholder="MM/YY"
-                    maxlength="5"
-                    x-mask="99/99"
-                    data-test="card-expiry-input"
-                />
-
-                <flux:input
-                    wire:model="cardCvc"
-                    :label="__('CVC')"
-                    type="text"
-                    required
-                    autocomplete="cc-csc"
-                    placeholder="123"
-                    maxlength="3"
-                    x-mask="999"
-                    data-test="card-cvc-input"
+                    wire:model="cardholderName"
+                    placeholder="Juan Pérez"
+                    class="w-full px-3 py-2 text-sm outline-none"
+                    style="background: #0e0e10; color: #e5e1e4; border-bottom: 1px solid #4b4455;"
                 />
             </div>
 
-            <flux:button type="submit" variant="primary" class="w-full" data-test="subscribe-button">
-                {{ __('Subscribe — $:price/mo', ['price' => number_format($price, 2)]) }}
-            </flux:button>
+            <div class="mb-6">
+                <label class="block mb-1 text-xs uppercase tracking-widest" style="color: #cdc2d8;">Datos de tarjeta</label>
+                <div id="card-element" class="px-3 py-3" style="background: #0e0e10; border-bottom: 1px solid #4b4455;"></div>
+            </div>
+
+            <button
+                id="submit-btn"
+                type="submit"
+                class="w-full py-3 text-sm font-bold uppercase tracking-widest"
+                style="background: linear-gradient(135deg, #9147ff, #5e00c1); color: #fffcff; cursor: pointer;"
+                :disabled="processing"
+            >
+                <span id="btn-text">Suscribirme por ${{ number_format($price, 2) }}/mes</span>
+            </button>
         </form>
 
-        <p class="text-center text-xs text-zinc-500 dark:text-zinc-500">
-            {{ __('Your card will be charged :price/month. Cancel anytime.', ['price' => '$' . number_format($price, 2)]) }}
+        <p class="mt-4 text-center" style="color: #4b4455; font-size: 0.75rem;">
+            Pago seguro procesado por Stripe. Podés cancelar cuando quieras.
         </p>
-    @endif
+    </div>
+
+    {{-- Stripe.js --}}
+    <script src="https://js.stripe.com/v3/"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const stripe = Stripe('{{ config('cashier.key') }}');
+            const elements = stripe.elements({ clientSecret: '{{ $clientSecret }}' });
+            const cardElement = elements.create('card', {
+                style: {
+                    base: {
+                        color: '#e5e1e4',
+                        fontFamily: 'Inter, sans-serif',
+                        fontSize: '14px',
+                        '::placeholder': { color: '#4b4455' },
+                    },
+                    invalid: { color: '#ff6b6b' },
+                }
+            });
+            cardElement.mount('#card-element');
+
+            document.getElementById('payment-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                document.getElementById('btn-text').textContent = 'Procesando...';
+
+                const { paymentMethod, error } = await stripe.createPaymentMethod({
+                    type: 'card',
+                    card: cardElement,
+                    billing_details: { name: @this.cardholderName },
+                });
+
+                if (error) {
+                    @this.set('errorMessage', error.message);
+                    document.getElementById('btn-text').textContent = 'Suscribirme por ${{ number_format($price, 2) }}/mes';
+                    return;
+                }
+
+                @this.subscribe(paymentMethod.id);
+            });
+        });
+    </script>
 </div>
