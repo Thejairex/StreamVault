@@ -52,6 +52,65 @@
                 viewable
             />
 
+            {{-- ─── Payment Information ───────────────────────────────────── --}}
+            <flux:separator text="{{ __('Payment method') }}" />
+
+            <p class="text-xs text-zinc-500 dark:text-zinc-400">
+                {{ __('A valid payment method is required to complete your registration. You will be charged $:price/month.', ['price' => number_format(config('streamvault.subscription_price', 7.99), 2)]) }}
+            </p>
+
+            <flux:input
+                name="card_name"
+                :label="__('Name on card')"
+                :value="old('card_name')"
+                type="text"
+                required
+                autocomplete="cc-name"
+                :placeholder="__('John Doe')"
+                data-test="card-name-input"
+            />
+
+            <flux:input
+                name="card_number"
+                :label="__('Card number')"
+                :value="old('card_number')"
+                type="text"
+                required
+                autocomplete="cc-number"
+                placeholder="1234 5678 9012 3456"
+                maxlength="19"
+                x-mask="9999 9999 9999 9999"
+                data-test="card-number-input"
+            />
+
+            <div class="grid grid-cols-2 gap-4">
+                <flux:input
+                    name="card_expiry"
+                    :label="__('Expiry')"
+                    :value="old('card_expiry')"
+                    type="text"
+                    required
+                    autocomplete="cc-exp"
+                    placeholder="MM/YY"
+                    maxlength="5"
+                    x-mask="99/99"
+                    data-test="card-expiry-input"
+                />
+
+                <flux:input
+                    name="card_cvc"
+                    :label="__('CVC')"
+                    :value="old('card_cvc')"
+                    type="text"
+                    required
+                    autocomplete="cc-csc"
+                    placeholder="123"
+                    maxlength="3"
+                    x-mask="999"
+                    data-test="card-cvc-input"
+                />
+            </div>
+
             <div class="flex items-center justify-end">
                 <flux:button type="submit" variant="primary" class="w-full" data-test="register-user-button">
                     {{ __('Create account') }}
